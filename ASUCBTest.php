@@ -5,20 +5,22 @@ $password = "abc123";
 
 
 try {
-	$conn = new PDO($dsn, $username, $password);
-	echo "You have connected";
-	$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $conn->prepare("SELECT id, parent_id, name FROM structure"); 
-    $stmt->execute();
-    //Преобразование результирующего массива в ассоциативный
-    $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    foreach($stmt->fetchAll() as $key=>$v) { 
-        
-        $jresult = json_encode($v);
-		echo json_encode($jresult);
+	$dbcon = new PDO($dsn, $username, $password);
+	echo "Подключено";
+	$dbcon->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sqlquery = "SELECT id, parent_id, name FROM structure"; 
+    $run = $dbcon->prepare($sqlquery);
+    $run -> execute();
+
+    $fetch = array();
+
+    while($row=$run->fetch(PDO::FETCH_ASSOC)) {
+    	$fetch['structure'][] = $row;
     }
-}
-    
+   	//Преобразуем массив в json формат
+    echo json_encode($fetch);
+}  
+//Отлавливаем исключения
 catch(PDOException $e) {
 	 $error_message = $e -> getMessage();
 	 echo $error_message;
