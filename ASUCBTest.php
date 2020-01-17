@@ -3,6 +3,7 @@
 header('Content-Type: text/html; charset=utf-8');
 
 try {
+	//Передаем в каждую функцию необходимые учетные данные для БД
 	gettree("mysql:host=localhost; dbname=asucb","root","abc123");
 	getinfo("mysql:host=localhost; dbname=asucb","root","abc123");
 	updateinfo("mysql:host=localhost; dbname=asucb","root","abc123");
@@ -15,7 +16,7 @@ catch(PDOException $e) {
 	echo $error_message;
 	exit();
 }
-
+//Функция вывода дерева
 function gettree($dsn,$username,$password) 
 {
 	$dbcon = new PDO($dsn,$username,$password);
@@ -32,7 +33,7 @@ function gettree($dsn,$username,$password)
    	//Преобразуем массив в json формат
 	echo json_encode($fetch, JSON_UNESCAPED_UNICODE);
 }
-
+//Функция получения информации об узле
 function getinfo($dsn,$username,$password)
 {
 	$dbcon2 = new PDO($dsn,$username,$password);
@@ -48,11 +49,11 @@ function getinfo($dsn,$username,$password)
    	echo "<br> Информация об определенном элементе узла <br>";
 	echo json_encode($fetch2, JSON_UNESCAPED_UNICODE);
 }
-
+//Функция обновления информации в узле 
 function updateinfo($dsn,$username,$password)
 {
 	$dbcon3 = new PDO($dsn,$username,$password);
-	$updquery = "UPDATE structure SET name = 'Университет3' WHERE id = 1"; 
+	$updquery = "UPDATE structure SET name = 'Университет4' WHERE id = 1"; 
 	$getnew = "SELECT * FROM structure WHERE id = 1";
     $run3 = $dbcon3->prepare($updquery);
     $run4 = $dbcon3->prepare($getnew);
@@ -70,8 +71,7 @@ function updateinfo($dsn,$username,$password)
    	//Преобразуем массив в json формат
    	echo "<br> Информация об обновленном элементе узла <br>";
 	echo json_encode($fetch3, JSON_UNESCAPED_UNICODE);
-	echo json_encode($fetch4, JSON_UNESCAPED_UNICODE);
-}
 
+}
 
 ?>
