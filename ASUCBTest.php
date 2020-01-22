@@ -1,77 +1,118 @@
-﻿<?php
+﻿﻿<?php
 
 header('Content-Type: text/html; charset=utf-8');
 
-try {
-	//Передаем в каждую функцию необходимые учетные данные для БД
-	gettree("mysql:host=localhost; dbname=asucb","root","abc123");
-	getinfo("mysql:host=localhost; dbname=asucb","root","abc123");
-	updateinfo("mysql:host=localhost; dbname=asucb","root","abc123");
+$host_actual = "localhost";
+$db_actual = "asucb";
+$dbuser_actual = "root";
+$dbpass_actual = "abc123";
 
-}
 
-//Отлавливаем исключения
-catch(PDOException $e) {
-	$error_message = $e -> getMessage();
-	echo $error_message;
-	exit();
-}
-//Функция вывода дерева
-function gettree($dsn,$username,$password) 
+//Создание класса взаимодействия с БД
+class Connect_DB
 {
-	$dbcon = new PDO($dsn,$username,$password);
-	echo "Подключение установлено <br>";
-	$dbcon->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sqlquery = "SELECT id, parent_id, name FROM structure"; 
-    $run = $dbcon->prepare($sqlquery);
-    $run -> execute();
-    $fetch = array();
+    //Свойства и методы класса
+    private $host= "localhost"; //Хост mysql:host=localhost;
+    private $db= "asucb"; //dbname=asucb";
+    private $dbuser= "root";// Пользователь "root";
+    private $dbpass= "abc123"; // Пароль "abc123";
+    public $dbcon; //Коннект к БД - переменная класса для подключения
 
-    while($row=$run->fetch(PDO::FETCH_ASSOC)) {
-    	$fetch['structure'][] = $row;
+    public $isConn; //Переменная для проверки подключения к БД
+
+    //Конструктор для подключения к БД
+    public function __construct($host,$db,$dbuser,$dbpass)
+    {
+        $this->isConn = TRUE;
+        try {
+            $this->dbcon = new PDO("mysql:host=$this->host; dbname=$this->db", $this->dbuser, $this->dbpass);
+            $this->dbcon->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->dbcon->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            echo "Подключение установлено <br>";
+        }
+        catch (PDOException $e) {
+            throw new Exception($e->getMessage());
+        }
+
     }
-   	//Преобразуем массив в json формат
-	echo json_encode($fetch, JSON_UNESCAPED_UNICODE);
+    //Методы 
+    //Функция отключения от БД
+    public function disconnestDB()
+    {
+        $this->dbcon = NULL;
+        $this->isConn = FALSE; 
+    }
+    //Метод получения информации от одной строки 
+    public function getrow($query, $params = [])
+    {
+       try {
+            $stmt = $this->dbcon->prepare($query);
+            $stmt->execute($params);
+            $outvalue = $stmt->fetchAll();
+            return $outvalue;
+
+       } catch(PDOException $e) {
+            throw new Exception($e->getMessage());
+            
+       }
+    }
+    //Функция запроса всего дерева
+    public function gettree($query, $params = [])
+    {
+       try {
+            $stmt = $this->dbcon->prepare($query);
+            $stmt->execute($params);
+            return $stmt -> fetchAll();
+
+       } catch(PDOException $e) {
+            throw new Exception($e->getMessage());
+            
+       }
+    }
+    //Метод вставки строки
+    public function insertrow($query,$params=[])
+    {
+        try {
+            $stmt = $this->dbcon->prepare($query);
+            $stmt->execute($params);
+            return TRUE;
+        } catch (PDOException $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+    //Метод обновление строки
+    public function updrow($query, $params = [])
+    {
+        $this->insertrow($query,$params);
+    }
+    //Метод удаления строки
+    public function deleterow($query, $params = [])
+    {
+        $this->insertrow($query,$params);
+    }  
 }
-//Функция получения информации об узле
-function getinfo($dsn,$username,$password)
+//Класс доделан
+
+//Начало взаимодействия с бд
+
+//Функция вывод в JSON
+function main($value)
 {
-	$dbcon2 = new PDO($dsn,$username,$password);
-	$infoquery = "SELECT * FROM structure WHERE id = 1"; 
-    $run2 = $dbcon2->prepare($infoquery);
-    $run2 -> execute();
-    $fetch2 = array();
-
-    while($row2=$run2->fetch(PDO::FETCH_ASSOC)) {
-    	$fetch2['structure'][] = $row2;
-    }
-   	//Преобразуем массив в json формат
-   	echo "<br> Информация об определенном элементе узла <br>";
-	echo json_encode($fetch2, JSON_UNESCAPED_UNICODE);
+    echo "<br>";
+    echo json_encode($value, JSON_UNESCAPED_UNICODE);
+    echo "<br>";
 }
-//Функция обновления информации в узле 
-function updateinfo($dsn,$username,$password)
-{
-	$dbcon3 = new PDO($dsn,$username,$password);
-	$updquery = "UPDATE structure SET name = 'Университет4' WHERE id = 1"; 
-	$getnew = "SELECT * FROM structure WHERE id = 1";
-    $run3 = $dbcon3->prepare($updquery);
-    $run4 = $dbcon3->prepare($getnew);
-    $run3 -> execute();
-    $run4 -> execute();
-    $fetch3 = array();
-    $fetch4 = array();
+    $connection = new Connect_DB($host_actual, $db_actual,$dbuser_actual,$dbpass_actual);
 
-    while($row3=$run3->fetch(PDO::FETCH_ASSOC)) {
-    	$fetch3['structure'][] = $row3;
-    }
-    while($row4=$run4->fetch(PDO::FETCH_ASSOC)) {
-    	$fetch3['structure'][] = $row4;
-    }
-   	//Преобразуем массив в json формат
-   	echo "<br> Информация об обновленном элементе узла <br>";
-	echo json_encode($fetch3, JSON_UNESCAPED_UNICODE);
+    $action1 = $connection->getrow("SELECT * FROM structure WHERE id = ?", ["1"]);
 
-}
+    $action2 = $connection -> gettree("SELECT * FROM structure");
+
+    //Все действия с базой записаныв массив
+    $actions = array($action1,$action2);
+
+    //Последовательный перебор ассоциативного массива действий и вывод всех операций
+    foreach($actions as $value)
+        main($value);
 
 ?>
